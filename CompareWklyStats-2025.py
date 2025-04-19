@@ -17,26 +17,29 @@
 #          Load KS dictionary with team name and category/value for
 #            AB (4), H (4), HR (3), RBI (3), RS (3), SB (3), BA (1.4)
 
-import re
-import sys
+import Standard_Declarations as SD
 
 SeasonCCYY = '2025'
 
-weekOf = SeasonCCYY + '0408'
+weekOf = SeasonCCYY + '0415'
 print ('Running for the week of: ', weekOf)
 
-reTotals  = re.compile(r'.*Totals')
-rePitcher = re.compile(r'.*Pitcher')
-reHitter  = re.compile(r'.*Hitter')
+reTotals  = SD.re.compile(r'.*Totals')
+rePitcher = SD.re.compile(r'.*Pitcher')
+reHitter  = SD.re.compile(r'.*Hitter')
 
-pathName = 'C:\\' + SeasonCCYY + '\\Database\\Standings-KBSS'
-fileName = '\\WK' + weekOf + '.txt'
-print ('path:', pathName, ',file:', fileName)
-KBSSfile = open(pathName + fileName)
+pathName = SD.MainPathName + str(SeasonCCYY) + '\\Database'
+fileName = '\\Standings-KBSS\\KBSS-Standings-' + weekOf + '-WK.txt'
+
+# print ('path:', pathName, ',file:', fileName)
+fullName = pathName + fileName
+# fullName = 'C:\\Users\\keith\\Documents\\Fantasy Baseball\\2025\\Database\\Standings-KBSS\\WK20250408.txt'
+print ('KBSS filename:', fullName)
+KBSSfile = open (pathName + fileName)
 linelist = KBSSfile.readlines()
 KBSSfile.close()
-print ('lineLiat:', linelist)
-sys.exit()
+# print ('lineList:', linelist)
+# SD.sys.exit()
 
 KSTotals = {}
 
@@ -48,9 +51,9 @@ for line in linelist:
             KSTotals.setdefault(teamName + '-SV', int(line[60:64]))
             KSTotals.setdefault(teamName + '-K', int(line[89:94]))
             KSTotals.setdefault(teamName + '-ERA', round(float(line[95:102]), 3))
-            KSTotals.setdefault(teamName + '-WHIP', round(float(line[103:109]), 3))
+            KSTotals.setdefault(teamName + '-WHIP', round(float(line[103:110]), 4))
 #            print(teamName, 'ERA-raw', line[93:100], ',ERA-float', float(line[93:100]), ',ERA-round', round(float(line[93:100]),3))
-#            print(teamName, 'WHIP-raw', line[101:107], ',WHIP-float', float(line[101:107]), ',WHIP-round', round(float(line[101:107]), 3))
+#            print(teamName, 'WHIP-raw', line[103:110], ',WHIP-float', float(line[103:110]), ',WHIP-round', round(float(line[103:110]), 4))
 #            KSTotals.setdefault(teamName+'-IP',float(line[57:64]))
 #            KSTotals.setdefault(teamName+'-PHits',int(line[64:69]))
 #            KSTotals.setdefault(teamName+'-BB',int(line[69:74]))
@@ -81,20 +84,23 @@ for line in linelist:
 #      If a team name found then set the teamName
 #      If a numeric value is found then load the RW dictionary with the value
 
+pathName   = SD.MainPathName + str(SeasonCCYY) + '\\Database'
+RWfilename = pathName + '\\Standings-Rotowire\\RW-Standings-' + weekOf + '-WK.txt'
+print ('RW filename:', RWfilename)
+RWfile = open(RWfilename)
 
-RWfile = open('C:\\STANDINGS\\Standings ' + SeasonCCYY + '\\ROTOWIRE\\RW-Standings-' + weekOf + '.txt')
 linelist = RWfile.readlines()
 RWfile.close()
 
 RWTotals = {}
 categoryName = ''
 RWTeamNames = {'Kops': 'KOPS', 'Chris': 'CRIT', 'Pinball': 'PWIZ', 'BoilerRakers': 'RAKE',
-               'So.Philly': 'SQDS', 'Dwane': 'DLAY', 'PMOB': 'PMOB','Lou\'s': 'LOUS',
+               'So.Philly': 'SQDS', 'Juanna': 'BLEV', 'PMOB': 'PMOB','Lou\'s': 'LOUS',
                'BobsBigBoys': 'BOYS', 'Wall-Aces': 'ACES', 'Wardens': 'WARD', 'Z': 'Z**2'}
 RWCategoryNames = {'AVG': 'BA', 'HR': 'HR', 'RBI': 'RBI', 'R': 'RS', 'SB': 'SB', 'ERA': 'ERA', 'SV': 'SV', 'K': 'K',
                    'WHIP': 'WHIP', 'W': 'W'}
 
-preComma = re.compile(r'(.*?),')  # Success!
+preComma = SD.re.compile(r'(.*?),')  # Success!
 
 categoryName = ''
 teamName = ''
@@ -102,10 +108,10 @@ teamName = ''
 skipLine = True
 
 for line in linelist:
-#    print('line=', line[0:55], '*')
+#    print('line=', line[0:55])
 
-#    if line[0:6] == 'PDFPDF':
-    if line[0:17] == 'Export Table Data':
+    if line[0:6] == 'PDFPDF':
+#    if line[0:17] == 'Export Table Data':  #last half of 2024
 
         skipLine = False
         continue
@@ -114,7 +120,7 @@ for line in linelist:
     if skipLine or line == '\n' or line[0:4] == 'Name' or line[0:7] == '<https:':
         continue
     else:
-        line = line.replace('\t', '')
+        line = line.replace('\t', ' ')
         line = line.replace('\n', '')
 #        print('repline=',line[0:55],'*')
 
@@ -131,9 +137,18 @@ for line in linelist:
 #            if lineElts[0][0:9] == 'leagueID=':
 #                tempVal = lineElts[1]
 #                print('tempVal:', tempVal)
-#  in late 2024 the team name, category value, and points are on the same line
+
+#  in late 2024 the team name, category value, and points were on the same line
 #             else:
+#            tempStr = lineElts[0]
+#            print('tempStr:', tempStr)
+
+#  in 2025 the layout is:
+#    category
+#    NAME TOTAL POINTS header
+#    team name <tab> <stat value> <tab> <point value>
             tempStr = lineElts[0]
+#            print('tempStr:', tempStr)
 
             catgTemp = RWCategoryNames.get(tempStr, 'None')
             if catgTemp != 'None':
@@ -141,22 +156,24 @@ for line in linelist:
                 continue
 
             teamTemp = RWTeamNames.get(tempStr, 'None')
-#            print('teamTemp:', teamTemp)
             if teamTemp != 'None':
                 teamName = teamTemp
                 tempVal = lineElts[-2]      # workaround for team names with spaces
 #                print('tempVal:', tempVal)
-#                continue
-#            print('catgName:', categoryName)
-#            print('teamName:', teamName)
+#                print('catgName:', categoryName)
+#                print('teamName:', teamName)
 
 #    print ('Team Name found:',teamName,', Category Name:',categoryName,'tempVal=',tempVal)
     if categoryName == 'BA':
         teamFloatValue = round(float(tempVal), 4)
         RWTotals.setdefault(teamName + '-' + categoryName, teamFloatValue)
 
-    elif categoryName == 'ERA' or categoryName == 'WHIP':
+    elif categoryName == 'ERA':
         teamFloatValue = round(float(tempVal), 3)
+        RWTotals.setdefault(teamName + '-' + categoryName, teamFloatValue)
+
+    elif categoryName == 'WHIP':
+        teamFloatValue = round(float(tempVal), 4)
         RWTotals.setdefault(teamName + '-' + categoryName, teamFloatValue)
 
     else:

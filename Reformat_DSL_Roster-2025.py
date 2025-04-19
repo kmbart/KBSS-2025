@@ -1,11 +1,14 @@
-#  RosterReformat:  Reformat a roster text file into player and team CSV files.
-#  Pull ROST files from Previous Years
-#  Open the roster file
-#  Read in the roster file
-#  Close the roster file
+#  Reformat_Roster:  Reformat a roster text file into player and team CSV files.
+#  Set up the import of Standard_Declarations and define the regex type(s)
+#  Set the SeasonCCYY, Weeks, and Pathname variables
 #
 #  for each week in the season
+#    Open the Roster file
+#    Read the entire Roster file into a tuple
+#    Close the Roster file
+#
 #    Open the player and team CSV files
+#
 #    Read each line in the roster file
 #      if the record type is:
 #        '*' then change the TeamAbbr
@@ -19,24 +22,23 @@
 #
 #  write counts for number of teams, players per team, etc.
 
+import Standard_Declarations as SD
 
-from Standard_Declarations import *
+reCurrent  = SD.re.compile(r'.*Current')
 
-reCurrent  = re.compile(r'.*Current')
+# set current year for season (CCYY format) and select the weeks tuple
+#  (there are not rosters for seasons prior to 2018)
+SeasonCCYY = 2025
+Weeks = SD.weeks[SeasonCCYY]
 bypassTypes = {'/':'Free Agent', '%':'Owner', '@':'Email'}
 playerTypes = {'+':'Active', '?':'Open', '-':'Reserved', '&':'Minors', '~':'Waived', '!':'Pending'}
 
-#  set current year for season (CCYY format) and select the weeks tuple
-# There are not rosters for seasons prior to 2018
-SeasonCCYY = 2024
-Weeks = weeks[SeasonCCYY]
-# rosterPathname = 'C:\\Users\\keith\\OneDrive\\Documents\\DSL\\Previous Years\\DSL-' + SeasonCCYY + '\\'
-rosterPathname = 'C:\\ROSTERS\\Rosters ' + str(SeasonCCYY) + '\\'
-print('pathname= ', rosterPathname)
+rosterPathname = SD.MainPathName + str(SeasonCCYY) + '\\Database\\Rosters\\'
+# print('roster pathname= ', rosterPathname)
 
 for Week in Weeks:
 
-    # Generate input date (SeasonCCYY + Week)
+# Generate input date (SeasonCCYY + Week)
     inputDate = str(SeasonCCYY) + Week
     inputCCYY = inputDate[0:4]
     inputMMDD = inputDate[4:8]
@@ -44,34 +46,38 @@ for Week in Weeks:
 #    print ('inputDate=', inputDate)
 
     rosterFilename = rosterPathname + 'ROST' + inputMMDD + '.DSL'
-#    print('filename= ', rosterFilename[57:])
-#    print('input filename= ', rosterFilename)
+    print('input filename= ', rosterFilename)
 
 # Open roster file
     rosterFile = open(rosterFilename)
 
 # Read in roster file
     lineList = rosterFile.readlines()
+#    print('roster file:', lineList)
 
 # Close roster file
     rosterFile.close()
 
+    CSVPathname = rosterPathname + 'CSV Files\\'
+#    print('CSV pathname= ', CSVPathname)
+
 # Open player CSV file
-    CSVPFile = open(rosterPathname + 'CSVP' + inputMMDD + '.txt','w')
+    CSVPFile = open(CSVPathname + 'CSVP' + inputMMDD + '.txt','w')
 # Open team CSV file
-    CSVTFile = open(rosterPathname + 'CSVT' + inputMMDD + '.txt','w')
-    print('output filenames= ', rosterPathname + 'CSVP' + inputMMDD + '.txt , CSVT' + inputMMDD + '.txt')
+    CSVTFile = open(CSVPathname + 'CSVT' + inputMMDD + '.txt','w')
 
 # Read each line in roster file
     lineCnt = 0
     for line in lineList:
         lineCnt += 1
-# if lineCnt > 111: break
+#        if lineCnt > 111: break
     
         lineType = line[0:1]
-# print ('read in type:', lineType, ' on line=', line[0:44])
+#        print ('read in type:', lineType, ' on line=', line[0:44])
 
-# if it is a '*' line, change the TeamAbbr
+#        SD.sys.exit()
+
+        # if it is a '*' line, change the TeamAbbr
         if lineType == '*':
             if teamAbbr != '':
                 print (inputDate, ',', teamAbbr, ',', 'FAB Remaining  = $', ',', format(round (FABRemaining, 2), "5.2f"), file=CSVTFile)

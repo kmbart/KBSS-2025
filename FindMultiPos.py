@@ -13,20 +13,18 @@
 #  COMMIT the changes
 #  close the database connection
 
-import Standard_Declarations
-import sqlite3
-import sys
-from sqlite3 import Error
+import Standard_Declarations as SD
 
 #  set current date (CCYYMMDD format)
-SeasonCCYY = '2023'
+SeasonCCYY = '2025'
 SeasonMMDD = '0408'
 
 # set pathname for rankings
 PathName = 'C:\\Users\\keith\\OneDrive\\Documents\\DSL History\\Auction\\Previous Years\\Auction-' + SeasonCCYY
 
 #  set database filename to RotoDB.db
-DB = 'C:\\SQLite\\RotoDB\\KBSS.db'
+DBName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\KBSS.db'
+print ('DBname:', DBName)
 
 #  initialize counts
 CountOfPlayersRead     = 0
@@ -34,7 +32,7 @@ CountOfPlayersWrit     = 0
 
 #  open the RotoDB connection and create a cursor for it
 try:
-    conn = sqlite3.connect(DB)
+    conn = SD.sqlite3.connect(DBName)
     curs = conn.cursor()
 
 #  set filename for multi-positionals

@@ -7,8 +7,10 @@ import csv
 import sqlite3
 import re
 import unidecode
-import datetime
+from datetime import datetime
 
+# main pathname for KBSS on ACER
+MainPathName = 'C:\\Users\\keith\\Documents\\Fantasy Baseball\\'
 
 # sort order dictionary for player status
 statusOrder = {'Active': 1, 'Open': 1, 'Pending': 2, 'Reserved': 3, 'Minors': 4, 'Waived': 5}
@@ -17,8 +19,8 @@ statusOrder = {'Active': 1, 'Open': 1, 'Pending': 2, 'Reserved': 3, 'Minors': 4,
 hitterPositions = ['C', '1B', '2B', '3B', 'SS', 'OF', 'DH']
 
 # AL Teams list
-AL_Teams = ['BAL', 'BOS', 'CHW', 'CLE', 'DET', 'HOU', 'KCR', 'LAA',
-            'MIN', 'NYY', 'OAK', 'SEA', 'TBR', 'TEX', 'TOR']
+AL_Teams = ['BAL', 'BOS', 'CHW', 'CWS', 'CLE', 'DET', 'HOU', 'KC', 'KCR', 'LAA',
+            'MIN', 'NYY', 'OAK', 'SEA', 'TB', 'TBR', 'TEX', 'TOR']
 
 # NL Teams list
 NL_Teams = ['ARI', 'ATL', 'CHC', 'CIN', 'COL', 'LAD', 'MIA', 'MIL',
@@ -30,8 +32,9 @@ positionOrder = {'P': '01', 'U': '02', 'X': '03', 'C': '04', '1': '05', '2': '06
 
 # create a dictionary of the weeks in each season (MMDD format) as a tuple
 weeks = {
-        2025: ('0408','0415','0422','0429','0506','0513','0520','0527','0603','0610','0617','0624','0701','0708',
-               '0715','0722','0729','0805','0812','0819','0826','0902','0909','0916','0923','1000','1007','0000'),
+        2025: ('0408','0415','0000'),
+#        2025: ('0408','0415','0422','0429','0506','0513','0520','0527','0603','0610','0617','0624','0701','0708',
+#               '0715','0722','0729','0805','0812','0819','0826','0902','0909','0916','0923','1000','1007','0000'),
         2024: ('0409','0416','0423','0430','0507','0514','0521','0528','0604','0611','0618','0625','0702',
                '0709','0716','0723','0730','0806','0813','0820','0827','0903','0910','0917','0924','1001','0000'),
         2023: ('0411','0418','0425','0502','0509','0516','0523','0530','0606','0613','0620','0627','0704','0711',

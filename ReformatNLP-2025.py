@@ -7,16 +7,15 @@
 #    open the NLP<mmdd> file
 
 
-from  Standard_Declarations import *
-# import sys
+import Standard_Declarations as SD
 
-# define a good line as 22 sets of <word>,<,> pairs, then a newline
-# GoodLine   = re.compile('([\w| |\'|\.]+,){22}\d+\n')
-GoodLine   = re.compile('([\w| |\'|\.|\-]+,){2}(\d){4,7},(\w){2,3},((\d+\.?\d*),){12}\d+\n')
+# define a good line as 2 (<word>,<,>) pairs, a 4-to-7 digit number and comma, a 2-to-3
+#   character string and a comma, then 22 (<decimals>,<,>) pairs, then a newline
+GoodLine   = SD.re.compile(r'([\w| |\'|\.|\-]+,){2}(\d){4,7},(\w){2,3},((\d+\.?\d*),){12}\d+\n')
 
 # set year parm and select the appropriate year's tuple
-StatCCYY = 2024
-WeekMMDD = weeks[StatCCYY]
+StatCCYY = 2025
+WeekMMDD = SD.weeks[StatCCYY]
 
 FilesOpened = 0
 PreLine     = ''
@@ -24,8 +23,11 @@ PreLine     = ''
 #  for each week in the tuple
 for CountOfFiles, Week in enumerate(WeekMMDD):
 
-    FileName = 'C:\\RW\\RW' + str(StatCCYY) + '\\NLP' + str(StatCCYY)[3:4] + Week + '.txt'
-#    print ('filename:', FileName)
+    if Week == '0000': break
+
+    FileName = SD.MainPathName + str(StatCCYY) + '\\Database\\Player Stats\\NLP' \
+               + str(StatCCYY)[3:4] + Week + '.txt'
+    print ('filename:', FileName)
 
     try:
         with open(FileName) as NLPFile:
@@ -131,7 +133,8 @@ for CountOfFiles, Week in enumerate(WeekMMDD):
 #                print (''.join(Liner))
 #            print ('lines read:', LinesRead)
 
-        FileName = 'C:\\RW\\RW' + str(StatCCYY) + '\\NFP' + str(StatCCYY)[3:4] + Week + '.txt'
+        FileName = SD.MainPathName + str(StatCCYY) + '\\Database\\Player Stats\\NFP' \
+                   + str(StatCCYY)[3:4] + Week + '.txt'
         print ('writefile:', FileName)
         with open(FileName,'w') as OutFile:
             for Line in WriteLines:

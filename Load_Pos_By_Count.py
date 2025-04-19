@@ -1,12 +1,10 @@
-#  LoadPosByCount - use the DraftBuddy stats to load the position counts into a table
+#  Load_Pos_By_Count - use the DraftBuddy stats to load the position counts into a table
+#    (last year's Rotowire positions will not have the AL-ers who have come over)
 #
 #  set current year for season (CCYY format)
 #  set database filename to KBSS.db
 #  initialize counts
 #  open the database connection
-#
-#  find the last stat date for the previous season
-#    SELECT max(CCYYMMDD) into a string variable lastMMDD
 #
 #  set pathname for the positions-with-DH CSV file
 #  set the Player_Positions_By_Count table name
@@ -29,52 +27,40 @@
 #  COMMIT the changes
 #  close the database connection
 # from unidecode import unidecode
-from Standard_Declarations import *
-import sqlite3
-from sqlite3 import Error
-import csv
-import sys
+import Standard_Declarations as SD
 
 #  set current year for season (CCYY format)
-SeasonCCYY = 2024
+SeasonCCYY = 2025
 
 #  set database filename to RotoDB.db
-DB = 'C:\\SQLite\\RotoDB\\KBSS.db'
+DBName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\KBSS.db'
+print ('DBname:', DBName)
 
 #  initialize counts
 CountOfPlayersRead     = 0
 CountOfPlayersWrit     = 0
 DHList                 = []
 AllDHs                 = []
-ALTeams = ['BAL','BOS','CLE','CWS','DET','HOU','KC','LAA','MIN','NYY','OAK','SEA','TB','TEX','TOR']
+# ALTeams = ['BAL','BOS','CLE','CWS','DET','HOU','KC','LAA','MIN','NYY','OAK','SEA','TB','TEX','TOR']
 
 #  open the RotoDB connection and create a cursor for it
 try:
-    conn = sqlite3.connect(DB)
+    conn = SD.sqlite3.connect(DBName)
     curs = conn.cursor()
 
-#  find the last stat date for the previous season
-    SQLSelect = 'SELECT max(CCYYMMDD) FROM Weekly_Stats WHERE CCYYMMDD > ' + str(SeasonCCYY) + '0000' + ' AND CCYYMMDD < ' + str(SeasonCCYY) + '9999'
-#    print('sql:', SQLSelect)
-    curs.execute(SQLSelect)
-    lastMMDD = str(curs.fetchone()[0])
-    print('last:', lastMMDD)
-
 # set pathname for the Draft Buddy positions CSV file
-    PathName = 'C:\\Users\\keith\\OneDrive\\Documents\\Fantasy Baseball\\DSL\\Auction\\Previous Years\\Auction-' + str(SeasonCCYY + 1) + '\\'
-    print('pathname:', PathName)
+    positionsFilename = SD.MainPathName + str(SeasonCCYY) \
+                        + '\\Metadata\\Draft Buddy Positions - ' \
+                        + str(SeasonCCYY - 1) + '.csv'
+    print('positionsFilename:', positionsFilename)
 
-#  set the Player_Positions_By_Count table name
+    #  set the Player_Positions_By_Count table name
     TableName = 'Player_Positions_By_Count'
-
-#  set the name for the positions-with-DH CSV file
-    FileName = 'Draft Buddy Positions - ' + str(SeasonCCYY) + '.csv'
-    print('filename:', FileName)
 
 #  read the positions-with-DH CSV file into a list
     try:
-        with open(PathName + FileName, 'r') as DHFile:
-            reader = csv.reader(DHFile)
+        with open(positionsFilename, 'r') as DHFile:
+            reader = SD.csv.reader(DHFile)
 
             CSVList = list()
             linesRead = 0
@@ -93,9 +79,9 @@ try:
                     row.insert(1, '00000000')
 
 #  update the names using UNIDECODE to remove foreign characters
-                    row[2] = unidecode.unidecode(row[2])
-                    row[3] = unidecode.unidecode(row[3])
-                    row[4] = unidecode.unidecode(row[4])
+                    row[2] = SD.unidecode.unidecode(row[2])
+                    row[3] = SD.unidecode.unidecode(row[3])
+                    row[4] = SD.unidecode.unidecode(row[4])
 #                    print('row:', row)
                     CSVList.append(row)
 
@@ -167,27 +153,29 @@ try:
     rows = curs.fetchall()
     Cnt_Mismatches = 0
     for row in rows:
-        if row[4] not in ALTeams:
+        if row[4] not in SD.AL_Teams:
             print(row)
             Cnt_Mismatches =+ 1
-    print(Cnt_Mismatches, 'NULL(S) found')
+    print(Cnt_Mismatches, 'Players with a NULL ID')
 
 #  SELECT the NL_Rosters HITTERS with no Player_Positions_By_Count entry and show them
-    SQLSelect = 'SELECT ROST.RW_ID, ROST.Full_Name FROM NL_Rosters_' + str(SeasonCCYY + 1) + ' AS ROST ' + \
-                'LEFT JOIN ' + TableName + ' AS POS ON ROST.Full_Name = POS.Full_Name ' \
-                'WHERE ROST.Position = "H" AND POS.Full_Name IS NULL AND ROST.CCYY = ' + str(SeasonCCYY + 1)
+    SQLSelect = 'SELECT ROST.RW_ID, ROST.Full_Name FROM NL_Rosters_' + str(SeasonCCYY) \
+                + ' AS ROST ' + 'LEFT JOIN ' + TableName \
+                + ' AS POS ON ROST.Full_Name = POS.Full_Name ' \
+                'WHERE ROST.Position = "H" AND POS.Full_Name IS NULL AND ROST.CCYY = ' \
+                + str(SeasonCCYY)
     curs.execute(SQLSelect)
 #    print ('sel:', SQLSelect)
     print('***MISSING HITTERS***')
     rows = curs.fetchall()
     for row in rows:
         print (row)
-    print (len(rows), 'Rostered HITTERS missing from positions')
+    print (len(rows), 'Rostered HITTERS with no position last year')
 
 except Error as err:
     print('connection attempt failed with error:', err)
     conn.close()
-    sys.exit()
+    SD.sys.exit()
 
 #  commit the import changes
 conn.commit()

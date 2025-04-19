@@ -25,22 +25,19 @@
 #    commit the import changes
 #    close the KBSS connection
 
-import Standard_Declarations
-import sys
-import sqlite3
-from sqlite3 import Error
-import csv
+import Standard_Declarations as SD
 
-#  set current year and week for import
-#  set current year for season (CCYY format) and select the weeks tuple
-SeasonCCYY = '2024'
-SeasonWeek = '1001'
+#  set year and week to last season's final stat period for import
+SeasonCCYY = '2025'
+SeasonWeek = '0408'
 
 #  set database filename to KBSS.db
-KBSS = 'C:\\SQLite\\RotoDB\\KBSS.db'
+DBName = SD.MainPathName + SeasonCCYY + '\\Database\\KBSS.db'
+print ('DBname:', DBName)
 
 #  set folder for season from basic path and current year
-PathRW = 'C:\\RW\\RW' + SeasonCCYY + '\\'
+pathIDFile = SD.MainPathName + SeasonCCYY + '\\Database\\Player Stats\\'
+print ('path:', pathIDFile)
 
 #  initialize counts
 Cnt_Hitters_All  = 0
@@ -50,7 +47,7 @@ Cnt_Pitchers_New = 0
 
 #  open the KBSS connection and create a cursor for it
 try:
-    conn = sqlite3.connect(KBSS)
+    conn = SD.sqlite3.connect(DBName)
     curs = conn.cursor()
 
 except Error as err:
@@ -59,13 +56,14 @@ except Error as err:
     sys.exit()
 
 #  set the hitter filename
+# FileName = 'NFH' + SeasonCCYY [3:4] + SeasonWeek + '.txt'
 FileName = 'NFH' + SeasonCCYY [3:4] + SeasonWeek + '.txt'
 print ('H filename:', FileName)
 
 #  read in the hitter file without the header line
 try:
-    with open(PathRW + FileName, 'r') as NLHFile:
-        reader = csv.reader(NLHFile)
+    with open(pathIDFile + FileName, 'r') as NLHFile:
+        reader = SD.csv.reader(NLHFile)
 
         for row in reader:
 #            print ('row bef:', row)
@@ -105,8 +103,8 @@ print ('P filename:', FileName)
 
 #  read in the pitcher file without the header line
 try:
-    with open(PathRW + FileName, 'r') as NLPFile:
-        reader = csv.reader(NLPFile)
+    with open(pathIDFile + FileName, 'r') as NLPFile:
+        reader = SD.csv.reader(NLPFile)
 
         for row in reader:
 #            print ('row bef:', row)
@@ -146,8 +144,8 @@ except IOError:
 conn.close()
 
 print()
-print ('database is:', KBSS)
-print ('path is:', PathRW)
+print ('database is:', DBName)
+print ('path is:', pathIDFile)
 print ('all hitters found: ', Cnt_Hitters_All)
 print ('new hitters found: ', Cnt_Hitters_New, ' - see list above')
 print ('all pitchers found:', Cnt_Pitchers_All)

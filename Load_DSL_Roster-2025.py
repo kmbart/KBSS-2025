@@ -19,27 +19,31 @@
 #    commit the import changes
 #    close the database connection
 
-from Standard_Declarations import *
-
-#  register a dialect for the CSV reader that removes spaces
-csv.register_dialect ('trimmed', skipinitialspace=True)
+import Standard_Declarations as SD
 
 #  set current year for season (CCYY format) and select the weeks tuple
-SeasonCCYY = 2024
-AllWeeks = weeks[SeasonCCYY]
+SeasonCCYY = 2025
+AllWeeks = SD.weeks[SeasonCCYY]
 
-#  set database filename to RotoDB.db
-DB = 'C:\\SQLite\\RotoDB\\KBSS.db'
+#  register a dialect for the CSV reader that removes spaces
+SD.csv.register_dialect ('trimmed', skipinitialspace=True)
+
+#  set database filename to KBSS.db
+databaseFilename = SD.MainPathName + str(SeasonCCYY) + '\\Database\\KBSS.db'
+# print ('DB filename:', databaseFilename)
 
 #  set folder for season from basic path and current year
-PathDB = 'C:\\Rosters\\Rosters ' + str(SeasonCCYY) + '\\'
+rosterPath = SD.MainPathName + str(SeasonCCYY) + '\\Database\\Rosters\\CSV Files\\'
+# print ('roster pathname:', rosterPath)
 
 #  initialize counts
 CountOfFiles = 0
 
+# SD.sys.exit()
+
 #    open the RotoDB connection and create a cursor for it
 try:
-    conn = sqlite3.connect(DB)
+    conn = SD.sqlite3.connect(databaseFilename)
     curs = conn.cursor()
 
 #    set the ROST<CCYYMMDD> table name and create the table
@@ -87,12 +91,12 @@ for Week in AllWeeks:
 
 #    set the CSV roster filename
     FileName = 'CSVP' + Week + '.txt'
-#    print ('filename:', FileName)
+    print ('filename:', FileName)
 
 #    read in the CSV roster file
     try:
-        with open(PathDB + FileName, 'r') as CSVRFile:
-            reader = csv.reader(CSVRFile, 'trimmed')
+        with open(rosterPath + FileName, 'r') as CSVRFile:
+            reader = SD.csv.reader(CSVRFile, 'trimmed')
             
             CSVList = list()
             for row in reader:
@@ -108,7 +112,7 @@ for Week in AllWeeks:
 
 # create the DELETE statement for the existing stats for this StatDate
             SQLDelete = 'DELETE FROM ' + TableName + ' WHERE CCYYMMDD = ' + StatDate
-            print('SQL:', SQLDelete)
+#            print('SQL:', SQLDelete)
 
 # execute the DELETE statement
             curs.execute(SQLDelete)
@@ -116,12 +120,8 @@ for Week in AllWeeks:
 #    import the CSV roster file
             SQLInsert = 'INSERT INTO ' + TableName + '(' + Headers + ') VALUES (' + ParmStr + ')'
 
-# execute the DELETE statement
+# execute the INSERT statement
             curs.executemany (SQLInsert, CSVList)
-
-#        print the entire line
-#            for line in linelist:
-#                print ('line:', line.strip())
 
 #    commit the import changes
         conn.commit()
@@ -136,7 +136,4 @@ for Week in AllWeeks:
 #    close the RotoDB connection
 conn.close()
 
-print()
-print ('database is:', DB)
-print ('path is:', PathDB)
 print ('Files found:', CountOfFiles)

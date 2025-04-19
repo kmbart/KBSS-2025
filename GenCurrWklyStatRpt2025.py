@@ -46,13 +46,6 @@
 
 
 import Standard_Declarations as SD
-import sys
-import os
-import copy
-import sqlite3
-from sqlite3 import Error
-# from Standard_Declarations import *
-
 
 # create a template for team stats as a list of dictionary elts
 seasonStatsDict = {}
@@ -281,9 +274,10 @@ def makePitcherStatsStr(s) -> str:  # stats
             , "{: 4d}".format(s[34])        # earned runs
             , "{: 5d}".format(s[35])        # strikeouts
             , "{: 7.3f}".format(9 * ERA)    # ERA
-            , "{: 7.3f}".format(WHIP)       # WHIP
+#            , "{: 7.3f}".format(WHIP)       # WHIP
+            , "{: 8.4f}".format(WHIP)  # WHIP
          ])
-
+#    print ('p str:', sStr)
     return (sStr)
 
 
@@ -295,7 +289,7 @@ def makePlayerInfoStr(p,s) -> str:  # player,seasonYYstr
         aster = ' '
 
     status = '  ' + p[0][0]
-#    print (p[2], p[3], ' status:', status)
+#    print (p[2], p[3], 'id:', p[4], 'status:', status)
     if status == '  P':
         status = '!!!'
     elif status == '  O':
@@ -334,19 +328,28 @@ def makeTeamHitterTotalsStr(l, t) -> str:  # league, team
 # print pitcher stat totals for a team
 def makeTeamPitcherTotalsStr(l, t) -> str:  # league, team
 #    print ('team:', t, 'IP:', l[t]['P_IP'])
+    if l[t]['P_IP'] == 0:
+        tempERA  = 0
+        tempWHIP = 0
+    else:
+        tempERA  = 9 * (l[t]['P_ERuns'] / l[t]['P_IP'])
+        tempWHIP = (l[t]['P_Hits'] + l[t]['P_BB']) / l[t]['P_IP']
+
     totStr = ' '.join(
         ['  ', t                                   # team abbr
             , ' - Pitcher Totals:                             '
-            , "{: 3d}".format(l[t]['P_Wins'])                                    # wins
-            , "{: 3d}".format(l[t]['P_Saves'])                                   # saves
-            , "{: 7.1f}".format(l[t]['P_IP'])                                    # IP
-            , "{: 5d}".format(l[t]['P_Hits'])                                    # hits
-            , "{: 4d}".format(l[t]['P_BB'])                                      # walks
-            , "{: 4d}".format(l[t]['P_ERuns'])                                   # earned runs
-            , "{: 5d}".format(l[t]['P_K'])                                       # strikeouts
-            , "{: 7.3f}".format(9 * (l[t]['P_ERuns'] / l[t]['P_IP']))            # ERA
-            , "{: 7.3f}".format((l[t]['P_Hits'] + l[t]['P_BB']) / l[t]['P_IP'])  # WHIP
+            , "{: 3d}".format(l[t]['P_Wins'])   # wins
+            , "{: 3d}".format(l[t]['P_Saves'])  # saves
+            , "{: 7.1f}".format(l[t]['P_IP'])   # IP
+            , "{: 5d}".format(l[t]['P_Hits'])   # hits
+            , "{: 4d}".format(l[t]['P_BB'])     # walks
+            , "{: 4d}".format(l[t]['P_ERuns'])  # earned runs
+            , "{: 5d}".format(l[t]['P_K'])      # strikeouts
+            , "{: 7.3f}".format(tempERA)        # ERA
+#            , "{: 7.3f}".format(tempWHIP)       # WHIP
+            , "{: 8.4f}".format(round(tempWHIP,4))  # WHIP
          ])
+#    print ('tot p:', totStr)
 
     return (totStr)
 
@@ -471,7 +474,7 @@ def putPointsOnList(n, catgList):  # number of teams, category list (team, value
 leagueName         = 'DSL'
 numOfTeams         = 12
 
-seasonCCYY         = 2024
+seasonCCYY         = 2025
 seasonYYstr        = str(seasonCCYY)[2:4]
 weeksList          = SD.weeks[seasonCCYY]
 prevSeasonCCYY     = seasonCCYY - 1
@@ -482,20 +485,17 @@ tempPWFilename     = ''
 tempPYFilename     = ''
 
 # set pathname for database access
-pathNameDB = 'C:\\SQLite\\RotoDB\\'
+pathNameDB = SD.MainPathName + str(seasonCCYY) + '\\Database\\KBSS.db'
 
 # set pathname for standings
-pathNameStdgs = 'C:\\STANDINGS\\Standings ' + str(seasonCCYY) + '\\KBSS\\'
-
-# set connection filenames for KBSS
-DB = 'KBSS.db'
+pathNameStdgs = SD.MainPathName + str(seasonCCYY) + '\\Database\\Standings-KBSS'
 
 # initialize counts
 countOfWeeks = 0
 
 try:
 # connect to the databases
-    connKBSS = sqlite3.connect(pathNameDB + DB)
+    connKBSS = SD.sqlite3.connect(pathNameDB)
 
 # create cursors for the databases
     cursKBSS = connKBSS.cursor()
@@ -529,35 +529,36 @@ try:
 
 # for each team in the league create empty season stats list
     for team in teamAbbrList:
-        seasonStatsDict[team] = copy.deepcopy(teamStatsTemplate)
+        seasonStatsDict[team] = SD.copy.deepcopy(teamStatsTemplate)
 
 #     print ('season stats at start:', seasonStatsDict)
 
 # for each week in the tuple
     for week in weeksList:
 
-#        if week > '0504':
-#            break
-
         statWeek = str(seasonCCYY) + week
 
 #  Adjust current, previous stat week values and filename for 0000 roster
         if week == '0000':
             statWeek = str(seasonCCYY) + weeksList[-2]
-            prevWeek = str(seasonCCYY) + weeksList[-3]
+#    Comment out the prevWeek line for the first week of the season
+            if weeksList[-2] != weeksList[0]:
+                prevWeek = str(seasonCCYY) + weeksList[-3]
+            else:
+                prevWeek = ''
 
         currFileName = str(seasonCCYY) + week
         print ('week of:', week, ',statWeek:', statWeek, ',prev:', prevWeek, ',currFileName:', currFileName)
 
 # open temp files for player weekly and year-to-date stat lines
-#        tempPWFilename = pathNameStdgs + 'PW' + str(seasonCCYY) + str(week) + '.txt'
-        tempPWFilename = pathNameStdgs + 'PW' + currFileName + '.txt'
+        tempPWFilename = pathNameStdgs + '\\KBSS-Standings-' + \
+                         currFileName + '-WK.txt'
         playerWKFile = open(tempPWFilename, 'w')
-#        if tempPYFilename != '':
-#            playerYTDFile.close()
-#            os.remove(tempPYFilename)
-        tempPYFilename = pathNameStdgs + 'PY' + currFileName + '.txt'
+        tempPYFilename = pathNameStdgs + '\\KBSS-Standings-' + \
+                         currFileName + '-YR.txt'
         playerYTDFile = open(tempPYFilename, 'w')
+        print('PW file:', tempPWFilename)
+        print('PY file:', tempPYFilename)
 
 # for each team in the league
         for team in teamAbbrList:
@@ -604,7 +605,7 @@ try:
             tempWKTeamList.append(teamHdr)
 
 # initialize the stats dictionary for this team
-            weeklyStatsDict[teamAbbr] = copy.deepcopy(teamStatsTemplate)
+            weeklyStatsDict[teamAbbr] = SD.copy.deepcopy(teamStatsTemplate)
 
 # do a SELECT for this season + week + + league + team to get all the players on the team
             _SQL = 'select Status, Position, Last_Name, First_Name, RW_ID, Salary, Contract from Rosters_' + \
@@ -614,6 +615,8 @@ try:
             roster = cursKBSS.fetchall()
 
 # sort the roster by status
+#            for p in roster:
+#                print(p[2], p[3], 'status:', p[0], 'pos:', p[1])
             roster.sort(key=lambda k: str(SD.statusOrder[k[0]]) + SD.positionOrder[k[1]] + k[2] + k[3])
 #            print ('sorted:', roster)
 
@@ -640,6 +643,7 @@ try:
                     currYTDStats = emptyStats
 
 # check for break of active pitchers or hitters - change in status or change in position
+#                print ('team:', teamAbbr)
 #                print ('currStatus:', currStatus, 'oldStatus:', oldStatus)
                 if oldStatus != currStatus:
                     if oldStatus == 1:
@@ -753,11 +757,6 @@ try:
             print(' ', file=playerYTDFile)
             print(' ', file=playerWKFile)
 
-        #            tempEList = []
-#            tempHList = []
-#            tempPList = []
-#            tempTList = []
-
 # save this week as the previous week
         prevWeek = str(seasonCCYY) + week
 
@@ -771,14 +770,18 @@ try:
         putPointsOnList(numOfTeams, PSList)
         PKList = sorted([(t[0], t[1]['P_K']) for t in weeklyStatsDict.items()], key=lambda k: k[1], reverse=True)
         putPointsOnList(numOfTeams, PKList)
-#        print ('wksd:', weeklyStatsDict)
-        PERAList = sorted([(t[0], float((t[1]['P_ERuns'] * 9) / t[1]['P_IP'])) for t in weeklyStatsDict.items()],
-                          key=lambda k: k[1])
+
+        PERAList = sorted([(t[0], 0 if t[1]['P_IP'] == 0 \
+            else float((t[1]['P_ERuns'] * 9) / t[1]['P_IP'])) \
+                for t in weeklyStatsDict.items()], key=lambda k: k[1])
         putPointsOnList(numOfTeams, PERAList)
-        PWHIPList = sorted([(t[0], float((t[1]['P_Hits'] + t[1]['P_BB']) / t[1]['P_IP'])) for t in weeklyStatsDict.items()],
-                           key=lambda k: k[1])
+#        print ('PERAList:', PERAList)
+
+        PWHIPList = sorted([(t[0], 0 if t[1]['P_IP'] == 0 \
+            else float((t[1]['P_Hits'] + t[1]['P_BB']) / t[1]['P_IP'])) \
+                for t in weeklyStatsDict.items()], key=lambda k: k[1])
         putPointsOnList(numOfTeams, PWHIPList)
-#        print ('PWHIPL:', PWHIPList)
+#        print ('PWHIPList:', PWHIPList)
 
         HHRList = sorted([(t[0], t[1]['H_HR']) for t in weeklyStatsDict.items()], key=lambda k: k[1], reverse=True)
         putPointsOnList(numOfTeams, HHRList)
@@ -788,8 +791,10 @@ try:
         putPointsOnList(numOfTeams, HRUNSList)
         HSBList = sorted([(t[0], t[1]['H_SB']) for t in weeklyStatsDict.items()], key=lambda k: k[1], reverse=True)
         putPointsOnList(numOfTeams, HSBList)
-        HBAList = sorted([(t[0], float(t[1]['H_Hits'] / t[1]['AB'])) for t in weeklyStatsDict.items()], key=lambda k: k[1],
-                         reverse=True)
+        HBAList = sorted([(t[0], 0 if t[1]['AB'] == 0 \
+            else float(t[1]['H_Hits'] / t[1]['AB'])) \
+                for t in weeklyStatsDict.items()], key=lambda k: k[1],
+                    reverse=True)
         putPointsOnList(numOfTeams, HBAList)
 
 # reset weekly category lists
@@ -884,17 +889,17 @@ try:
         for aLine in playerWKFile:
             print (aLine, end='', file=standingsFile)
         playerWKFile.close()
-        os.remove(tempPWFilename)
+#        SD.os.remove(tempPWFilename)
 
 # close weekly temp and stats files
         playerYTDFile.close()
         standingsFile.close()
 
 
-except Error as err:
+except OSError as err:
     print('KBSS connection attempt failed with error:', err)
     connKBSS.close()
-    sys.exit()
+    SD.sys.exit()
 
 
 # open season temp stats file
@@ -1046,4 +1051,3 @@ playerYTDFile = open(tempPYFilename, 'r')
 for aLine in playerYTDFile:
     print (aLine, end='', file=seasonStatsFile)
 playerYTDFile.close()
-os.remove(tempPYFilename)

@@ -1,4 +1,4 @@
-#  LoadWklyStats - get NLH and NLP for each week and load them into the WklyStats table
+#  Load_Wkly_Stats - get NLH and NLP for each week and load them into the WklyStats table
 #
 #  set current year for season (CCYY format) and weeks in season (MMDD format)
 #  set database filename to KBSS.db
@@ -19,31 +19,25 @@
 #    commit the import changes
 #    close the KBSS connection
 
-from Standard_Declarations import *
-# import sys
-# import sqlite3
-# from sqlite3 import Error
-# import csv
+import Standard_Declarations as SD
 
 #  set current year for season (CCYY format) and select the weeks tuple
-SeasonCCYY = 2024
-Weeks = weeks[SeasonCCYY]
+SeasonCCYY = 2025
+Weeks = SD.weeks[SeasonCCYY]
 
-#  set database filename to KBSS.db
-KBSS = 'C:\\SQLite\\RotoDB\\KBSS.db'
-
-#  set folder for season from basic path and current year
-PathRW = 'C:\\RW\\RW' + str(SeasonCCYY) + '\\'
+#  set the database name
+DBName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\KBSS.db'
+print ('database is:', DBName)
 
 #  initialize counts
 CountOfFiles = 0
 
 #    open the KBSS connection and create a cursor for it
 try:
-    conn = sqlite3.connect(KBSS)
+    conn = SD.sqlite3.connect(DBName)
     curs = conn.cursor()
 
-except Error as err:
+except OSError as err:
     print ('connection attempt failed with error:', err)
     conn.close()
     sys.exit()
@@ -99,7 +93,6 @@ try:
     curs.execute('PRAGMA table_info(' + TableName + ');')
     ColumnNames = curs.fetchall()
 #    print ('column names:', ColumnNames)
-    
 
 # create a parm string of '?,' ColumnCnt times for the VALUES feed
     ColumnCnt = len(ColumnNames)
@@ -125,6 +118,8 @@ except Error as err:
 # for each week in the tuple load the hitter then the pitcher stats
 for Week in Weeks:
 
+    if Week == '0000': break
+
 # set the StatDate
     StatDate = str(SeasonCCYY) + Week
     print ('Loading week:', StatDate)
@@ -139,12 +134,14 @@ for Week in Weeks:
 # commit the changes
     conn.commit()
 
-# read in the reformatted hitter file
-    FileName = 'NFH' + str(SeasonCCYY) [3:4] + Week + '.txt'
-#    print ('H filename:', FileName)
+#  set the filename for the reformatted hitter file
+    FileName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\Player Stats\\NFH' \
+        + str(SeasonCCYY) [3:4] + Week + '.txt'
+    print ('hitter filename is:', FileName)
+
     try:
-        with open(PathRW + FileName, 'r') as NLHFile:
-            reader = csv.reader(NLHFile)
+        with open(FileName, 'r') as NLHFile:
+            reader = SD.csv.reader(NLHFile)
             
             CSVList = list()
             for row in reader:
@@ -167,12 +164,13 @@ for Week in Weeks:
     except IOError:
         print ('Error opening file:', FileName)
 
-# read in the reformatted pitcher file
-    FileName = 'NFP' + str(SeasonCCYY) [3:4] + Week + '.txt'
-#    print ('P filename:', FileName)
+#  set the filename for the reformatted pitcher file
+    FileName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\Player Stats\\NFP' \
+        + str(SeasonCCYY) [3:4] + Week + '.txt'
+    print ('pitcher filename is:', FileName)
     try:
-        with open(PathRW + FileName, 'r') as NLPFile:
-            reader = csv.reader(NLPFile)
+        with open(FileName, 'r') as NLPFile:
+            reader = SD.csv.reader(NLPFile)
             
             CSVList = list()
             for row in reader:
@@ -202,6 +200,5 @@ for Week in Weeks:
 conn.close()
 
 print()
-print ('database is:', KBSS)
-print ('path is:', PathRW)
+print ('database is:', DBName)
 print ('Files found:', CountOfFiles)

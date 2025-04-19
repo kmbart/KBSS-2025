@@ -1,4 +1,4 @@
-#  LoadNLRosters - get NL Rosters from CSV file
+#  Load_NL_Rosters - get NL Rosters from CSV file
 
 #  set the SeasonCCYY
 #  set the database name
@@ -26,33 +26,31 @@
 #  commit the  changes
 #  close the RWDB connection
 
-
-from unidecode import unidecode
-import Standard_Declarations
-import sqlite3
-from sqlite3 import Error
-import csv
+import Standard_Declarations as SD
 
 #  set the SeasonCCYY
 SeasonCCYY = '2025'
 
+#  register a dialect for the CSV reader that removes spaces
+SD.csv.register_dialect ('trimmed', skipinitialspace=True)
+
 #  set the database name
-DBName = 'C:\\SQLite\\RotoDB\\KBSS.db'
+DBName = SD.MainPathName + str(SeasonCCYY) + '\\Database\\KBSS.db'
 print ('database is:', DBName)
 
-#  set the path for the projections file
-PathName = 'C:\\ROSTERS\\Rosters ' + SeasonCCYY + '\\'
-print ('path is:', PathName)
+#  set the path for the Roster file
+rosterFilename = SD.MainPathName + str(SeasonCCYY) + '\\Database\\Rosters\\NL Rosters-2025.csv'
+print ('roster filename is:', rosterFilename)
 
 #  try to open the database connection and create a cursor for it
 try:
-    conn = sqlite3.connect(DBName)
+    conn = SD.sqlite3.connect(DBName)
     curs = conn.cursor()
     
 except Error as err:
     print ('connection attempt failed with error:', err)
     conn.close()
-    sys.exit()
+    SD.sys.exit()
 
 #  set the rosters table name
 TableName = 'NL_Rosters_' + SeasonCCYY
@@ -91,18 +89,15 @@ for hdr in ColumnNames:
     Headers = ','.join(ColumnNameList)
 #    print ('headers:', Headers)
 
-#  set the rosters filename
-FileName = 'NL Rosters-' + SeasonCCYY + '.csv'
-print('filename:', FileName)
-
 #  read in the rosters file without the header line
 try:
-    with open(PathName + FileName, 'r') as RosterFile:
-        reader = csv.reader(RosterFile)
+    with open(rosterFilename, 'r') as RosterFile:
+        reader = SD.csv.reader(RosterFile)
 
         CSVList = list()
         linesRead = 0
         for row in reader:
+#            print('row in:', row)
             linesRead = linesRead + 1
 #            print ('row:', linesRead, ' = ', row)
 #  skip the first row with the headers
@@ -112,8 +107,8 @@ try:
                 row.insert(1, '00000000')
 
 #  update the names  using UNIDECODE to remove foreign characters
-                row[5] = unidecode(row[5])
-                row[6] = unidecode(row[6])
+                row[5] = SD.unidecode.unidecode(row[5])
+                row[6] = SD.unidecode.unidecode(row[6])
                 row.insert(7, row[5] + ' ' + row[6])
 #                print('row:', row)
                 CSVList.append(row)
@@ -148,7 +143,7 @@ try:
         print('*** NL_ROSTERS - NULL RW_IDs ***')
         Cnt_Nulls = 0
         for row in rows:
-            if row[3] not in Standard_Declarations.AL_Teams:
+            if row[3] not in SD.AL_Teams:
                 Cnt_Nulls += 1
                 print(row)
         print(Cnt_Nulls, 'NULL RW_IDs found')
